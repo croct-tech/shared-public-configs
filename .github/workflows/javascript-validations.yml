@@ -5,7 +5,7 @@ on:
     inputs:
       node-version:
         type: string
-        required: true
+        default: '24'
       run-tests:
         type: boolean
         default: true
