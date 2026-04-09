@@ -1,0 +1,77 @@
+name: Private NPM Publish
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: "24"
+      registry-url:
+        type: string
+        default: "https://registry.npmjs.org"
+      build-dir:
+        type: string
+        default: "build"
+      prepare-script:
+        type: string
+        required: true
+      publish-access:
+        type: string
+        default: "restricted"
+      build-script:
+        type: string
+        default: "build"
+    secrets:
+      NPM_TOKEN:
+        required: true
+      PUBLISH_TOKEN:
+        required: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          registry-url: ${{ inputs.registry-url }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Cache dependencies
+        id: cache-dependencies
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-dependencies.outputs.cache-hit != 'true'
+        run: |
+          npm ci
+          rm -rf ~/.npmrc
+
+      - name: Build package
+        run: npm run ${{ inputs.build-script }}
+
+      - name: Prepare release
+        run: ${{ inputs.prepare-script }}
+
+      - name: Publish pre-release
+        if: ${{ github.event.release.prerelease }}
+        run: |
+            cd ${{ inputs.build-dir }}
+            npm publish --access ${{ inputs.publish-access }} --tag next
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN || secrets.NPM_TOKEN }}
+
+      - name: Publish release
+        if: ${{ !github.event.release.prerelease }}
+        run: |
+              cd ${{ inputs.build-dir }}
+              npm publish --access ${{ inputs.publish-access }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN || secrets.NPM_TOKEN }}
