@@ -1,4 +1,4 @@
-name: Publish NPM package
+name: Publish Public NPM Package
 
 on:
   workflow_call:
@@ -15,15 +15,9 @@ on:
       prepare-script:
         type: string
         required: true
-      publish-access:
-        type: string
-        default: "restricted"
       build-script:
         type: string
         default: "build"
-    secrets:
-      NPM_TOKEN:
-        required: true
 
 jobs:
   publish:
@@ -38,8 +32,6 @@ jobs:
         with:
           node-version: ${{ inputs.node-version }}
           registry-url: ${{ inputs.registry-url }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Cache dependencies
         id: cache-dependencies
@@ -50,9 +42,7 @@ jobs:
 
       - name: Install dependencies
         if: steps.cache-dependencies.outputs.cache-hit != 'true'
-        run: |
-          npm ci
-          rm -rf ~/.npmrc
+        run: npm ci
 
       - name: Install latest npm
         run: npm install -g npm@latest
@@ -67,10 +57,10 @@ jobs:
         if: ${{ github.event.release.prerelease }}
         run: |
           cd ${{ inputs.build-dir }}
-          npm publish --access ${{ inputs.publish-access }} --tag next --provenance
+          npm publish --access public --tag next --provenance
 
       - name: Publish release
         if: ${{ !github.event.release.prerelease }}
         run: |
           cd ${{ inputs.build-dir }}
-          npm publish --access ${{ inputs.publish-access }} --provenance
+          npm publish --access public --provenance
