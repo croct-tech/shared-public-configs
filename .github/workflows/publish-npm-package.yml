@@ -1,4 +1,4 @@
-name: Private NPM Publish
+name: Publish NPM package
 
 on:
   workflow_call:
@@ -24,12 +24,12 @@ on:
     secrets:
       NPM_TOKEN:
         required: true
-      PUBLISH_TOKEN:
-        required: false
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
       - uses: actions/checkout@v4
@@ -54,6 +54,9 @@ jobs:
           npm ci
           rm -rf ~/.npmrc
 
+      - name: Install latest npm
+        run: npm install -g npm@latest
+
       - name: Build package
         run: npm run ${{ inputs.build-script }}
 
@@ -63,15 +66,11 @@ jobs:
       - name: Publish pre-release
         if: ${{ github.event.release.prerelease }}
         run: |
-            cd ${{ inputs.build-dir }}
-            npm publish --access ${{ inputs.publish-access }} --tag next
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN || secrets.NPM_TOKEN }}
+          cd ${{ inputs.build-dir }}
+          npm publish --access ${{ inputs.publish-access }} --tag next --provenance
 
       - name: Publish release
         if: ${{ !github.event.release.prerelease }}
         run: |
-              cd ${{ inputs.build-dir }}
-              npm publish --access ${{ inputs.publish-access }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.PUBLISH_TOKEN || secrets.NPM_TOKEN }}
+          cd ${{ inputs.build-dir }}
+          npm publish --access ${{ inputs.publish-access }} --provenance

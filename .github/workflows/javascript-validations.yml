@@ -11,7 +11,7 @@ on:
         default: true
       run-security:
         type: boolean
-        default: false
+        default: true
 
       test-shards:
         type: string
