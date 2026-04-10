@@ -1,0 +1,179 @@
+name: Validations
+
+on:
+  workflow_call:
+    inputs:
+      node-version:
+        type: string
+        default: '24'
+      run-tests:
+        type: boolean
+        default: true
+      run-security:
+        type: boolean
+        default: true
+
+      test-shards:
+        type: string
+        default: '1'
+      dynamic-shards:
+        type: boolean
+        default: false
+
+      validate-command:
+        type: string
+        default: npm run validate
+      lint-command:
+        type: string
+        default: npm run lint
+      test-command:
+        type: string
+        default: npm run test
+
+      use-private-registry:
+        type: boolean
+        default: true
+
+    secrets:
+      GH_PACKAGES_TOKEN:
+        required: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      shard-matrix: ${{ steps.shards.outputs.matrix }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - name: Cache dependencies
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          if [ "${{ inputs.use-private-registry }}" = "true" ] && [ -n "${{ secrets.GH_PACKAGES_TOKEN }}" ]; then
+            echo "@croct-tech:registry=https://npm.pkg.github.com" >> ~/.npmrc
+            echo "//npm.pkg.github.com/:_authToken=${{ secrets.GH_PACKAGES_TOKEN }}" >> ~/.npmrc
+          fi
+
+          npm ci
+
+          rm -f ~/.npmrc
+
+      - name: Compute shard matrix
+        id: shards
+        run: |
+          if [ "${{ inputs.dynamic-shards }}" = "true" ]; then
+            COUNT=$(npx jest --listTests | wc -l)
+            SHARDS=$((COUNT / 80))
+            if [ "$SHARDS" -lt 1 ]; then SHARDS=1; fi
+            echo "matrix=$(seq 1 $SHARDS | jq -sc '.')" >> $GITHUB_OUTPUT
+
+          elif [ "${{ inputs.test-shards }}" -gt "1" ]; then
+            echo "matrix=$(seq 1 ${{ inputs.test-shards }} | jq -sc '.')" >> $GITHUB_OUTPUT
+          else
+            echo "matrix=[1]" >> $GITHUB_OUTPUT
+          fi
+
+  validate:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Validate
+        run: ${{ inputs.validate-command }}
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Lint
+        env:
+          NODE_OPTIONS: --max-old-space-size=7168
+        run: ${{ inputs.lint-command }}
+
+  test:
+    if: inputs.run-tests
+    runs-on: ubuntu-latest
+    needs: [setup, validate]
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.setup.outputs.shard-matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - uses: actions/cache@v4
+        id: cache
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Run tests
+        env:
+          NODE_OPTIONS: --max-old-space-size=7168
+        run: |
+          TOTAL=$(echo '${{ needs.setup.outputs.shard-matrix }}' | jq length)
+
+          if [ "$TOTAL" -gt "1" ]; then
+            ${{ inputs.test-command }} -- --shard=${{ matrix.shard }}/$TOTAL
+          else
+            ${{ inputs.test-command }}
+          fi
+
+  security:
+    if: inputs.run-security
+    runs-on: ubuntu-latest
+    needs: setup
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+
+      - uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+
+      - name: Audit dependencies
+        run: |
+          npm i -g npm-audit-resolver@3.0.0-7
+          npx check-audit --omit dev
