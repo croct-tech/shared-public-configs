@@ -50,16 +50,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-
-      - name: Cache dependencies
-        id: cache
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          cache: 'npm'
 
       - name: Install dependencies
-        if: steps.cache.outputs.cache-hit != 'true'
         run: |
           if [ "${{ inputs.use-private-registry }}" = "true" ] && [ -n "${{ secrets.GH_PACKAGES_TOKEN }}" ]; then
             echo "@croct-tech:registry=https://npm.pkg.github.com" >> ~/.npmrc
@@ -94,12 +87,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-
-      - uses: actions/cache@v4
-        id: cache
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          cache: 'npm'
 
       - name: Validate
         run: ${{ inputs.validate-command }}
@@ -113,12 +101,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-
-      - uses: actions/cache@v4
-        id: cache
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          cache: 'npm'
 
       - name: Lint
         env:
@@ -138,12 +121,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-
-      - uses: actions/cache@v4
-        id: cache
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          cache: 'npm'
 
       - name: Run tests
         env:
@@ -167,11 +145,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-
-      - uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node_modules-${{ hashFiles('**/package-lock.json', '**/package.json') }}
+          cache: 'npm'
 
       - name: Audit dependencies
         run: |
