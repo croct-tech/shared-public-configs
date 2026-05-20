@@ -78,21 +78,7 @@ jobs:
             echo "matrix=[1]" >> $GITHUB_OUTPUT
           fi
 
-  validate:
-    runs-on: ubuntu-latest
-    needs: setup
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ inputs.node-version }}
-          cache: 'npm'
-
-      - name: Validate
-        run: ${{ inputs.validate-command }}
-
-  lint:
+  code-style:
     runs-on: ubuntu-latest
     needs: setup
 
@@ -108,10 +94,24 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=7168
         run: ${{ inputs.lint-command }}
 
-  test:
+  static-analysis:
+    runs-on: ubuntu-latest
+    needs: setup
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+
+      - name: Validate
+        run: ${{ inputs.validate-command }}
+
+  unit-tests:
     if: inputs.run-tests
     runs-on: ubuntu-latest
-    needs: [setup, validate]
+    needs: [setup, static-analysis]
     strategy:
       fail-fast: false
       matrix:
@@ -135,7 +135,7 @@ jobs:
             ${{ inputs.test-command }}
           fi
 
-  security:
+  vulnerabilities:
     if: inputs.run-security
     runs-on: ubuntu-latest
     needs: setup
