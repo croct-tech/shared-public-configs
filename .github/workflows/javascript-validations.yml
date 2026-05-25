@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: npm
 
       - name: Install dependencies
         run: |
@@ -87,7 +87,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Lint
         env:
@@ -103,7 +106,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Validate
         run: ${{ inputs.validate-command }}
@@ -121,7 +127,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Run tests
         env:
@@ -145,7 +154,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
 
       - name: Audit dependencies
         run: |
