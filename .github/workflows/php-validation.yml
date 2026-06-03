@@ -1,0 +1,158 @@
+name: Validations
+
+on:
+  workflow_call:
+    inputs:
+      phpunit-args:
+        description: 'Extra arguments passed to PHPUnit'
+        required: false
+        type: string
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: symfonycorp/security-checker-action@v3
+
+  composer:
+    runs-on: ubuntu-latest
+    container:
+      image: crocttech/php-base-image:php8.5-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/.cache
+
+      - name: Vendor cache
+        uses: actions/cache@v4
+        with:
+          key: vendor-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/vendor
+
+      - name: Tools cache
+        uses: actions/cache@v4
+        with:
+          key: tools
+          path: ${{ github.workspace }}/.cache
+
+      - name: Install dependencies
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: Validate composer
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer validate
+
+      - name: Normalize composer
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer normalize --dry-run
+
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: crocttech/php-base-image:php8.5-dev
+    steps:
+      - name: Change owner of container working directory
+        run: chown root:root .
+
+      - uses: actions/checkout@v4
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/.cache
+
+      - name: Vendor cache
+        uses: actions/cache@v4
+        with:
+          key: vendor-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/vendor
+
+      - name: Tools cache
+        uses: actions/cache@v4
+        with:
+          key: tools
+          path: ${{ github.workspace }}/.cache
+
+      - name: Install dependencies
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: phpunit
+        run: XDEBUG_MODE=off ./vendor/bin/phpunit ${{ inputs.phpunit-args }}
+
+  validate:
+    runs-on: ubuntu-latest
+    container:
+      image: crocttech/php-base-image:php8.5-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/.cache
+
+      - name: Vendor cache
+        uses: actions/cache@v4
+        with:
+          key: vendor-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/vendor
+
+      - name: Tools cache
+        uses: actions/cache@v4
+        with:
+          key: tools
+          path: ${{ github.workspace }}/.cache
+
+      - name: Install dependencies
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: phpstan
+        run: ./vendor/bin/phpstan analyse -l max --memory-limit=1G src tests
+
+  lint:
+    runs-on: ubuntu-latest
+    container:
+      image: crocttech/php-base-image:php8.5-dev
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Composer cache
+        uses: actions/cache@v4
+        with:
+          key: composer-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/.cache
+
+      - name: Vendor cache
+        uses: actions/cache@v4
+        with:
+          key: vendor-${{ hashFiles('**/composer.lock') }}
+          path: ${{ github.workspace }}/vendor
+
+      - name: Tools cache
+        uses: actions/cache@v4
+        with:
+          key: tools
+          path: ${{ github.workspace }}/.cache
+
+      - name: Install dependencies
+        env:
+          COMPOSER_CACHE_DIR: ${{ github.workspace }}/.cache
+        run: composer install --no-progress --no-interaction --prefer-dist --optimize-autoloader
+
+      - name: phpcs
+        run: ./vendor/bin/phpcs -d memory_limit=1G
