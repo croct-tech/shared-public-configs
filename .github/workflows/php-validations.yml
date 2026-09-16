@@ -12,7 +12,7 @@ jobs:
   security:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v7
       - uses: symfonycorp/security-checker-action@v3
 
   composer:
@@ -20,22 +20,22 @@ jobs:
     container:
       image: crocttech/php-base-image:php8.5-dev
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Composer cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: composer-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/.cache
 
       - name: Vendor cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: vendor-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/vendor
 
       - name: Tools cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: tools
           path: ${{ github.workspace }}/.cache
@@ -63,22 +63,22 @@ jobs:
       - name: Change owner of container working directory
         run: chown root:root .
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Composer cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: composer-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/.cache
 
       - name: Vendor cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: vendor-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/vendor
 
       - name: Tools cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: tools
           path: ${{ github.workspace }}/.cache
@@ -96,22 +96,22 @@ jobs:
     container:
       image: crocttech/php-base-image:php8.5-dev
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Composer cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: composer-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/.cache
 
       - name: Vendor cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: vendor-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/vendor
 
       - name: Tools cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: tools
           path: ${{ github.workspace }}/.cache
@@ -129,22 +129,22 @@ jobs:
     container:
       image: crocttech/php-base-image:php8.5-dev
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Composer cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: composer-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/.cache
 
       - name: Vendor cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: vendor-${{ hashFiles('**/composer.lock') }}
           path: ${{ github.workspace }}/vendor
 
       - name: Tools cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           key: tools
           path: ${{ github.workspace }}/.cache
